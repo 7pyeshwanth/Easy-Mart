@@ -175,13 +175,18 @@ def users():
           rr.markdown(f"### ***{udt['failed_login_attempts']}***")
         ll.subheader("Cart")
         rr.json(udt['cart'])
+        if st.button('Delete', key='delete' + username, type='primary', use_container_width=True):
+          data.users.delete_one({'_id': username})
+          log(f"[red]User {username} deleted successfully[/]")
+          st.toast(f":red[User {username} deleted successfully]")
+          st.rerun()
 
 
 @st.experimental_dialog("Your Password")
 def show_pass(user, passs):
   st.subheader(f'Username: {user}')
   st.subheader(f"Password: {passs}")
-  log(f"[green]Password shown for {passs['_id']}[/]")
+  log(f"[green]Password shown for {user}[/]")
   if st.button('Close', key='close', type='primary', use_container_width=True):
     st.rerun()
 
@@ -204,8 +209,8 @@ def main():
       st.Page(billing_page, title="Billing", icon=":material/receipt_long:"),
       st.Page(stock_page, title="Inventory", icon=":material/inventory_2:"),
       st.Page(carts_page, title="Carts", icon=":material/shopping_cart:"),
-      st.Page(users, title="Users", icon=":material/shopping_cart:"),
-      st.Page(forget_pass, title="Forget Passwords", icon=":material/shopping_cart:"),
+      st.Page(users, title="Users", icon=":material/group:"),
+      st.Page(forget_pass, title="Forget Passwords", icon=":material/key:"),
   ]})
   pg.run()
 

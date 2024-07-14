@@ -40,7 +40,7 @@ class db_handler:
     for user_id, details in self.user_info['usernames'].items():
       if dt := self.users.find_one({'_id': user_id}):
         if dt != details:
-          details.pop('_id')
+          # details.pop('_id')
           xx = self.users.update_one(
               {'_id': user_id}, {'$set': details}, upsert=True)
           log(f'Updated user: {user_id}')
