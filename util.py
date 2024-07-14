@@ -43,11 +43,14 @@ class db_handler:
           details.pop('_id')
           xx = self.users.update_one(
               {'_id': user_id}, {'$set': details}, upsert=True)
+          log(f'Updated user: {user_id}')
       else:
         self.users.insert_one({'_id': user_id, **details})
+        log(f'New user added: {user_id}')
 
   def insert(self, collection, data):
     self.db[collection].insert_one(data)
+    log(f'New data added to {collection}')
     self.sync()
 
   def find(self, collection, **query):
@@ -111,6 +114,7 @@ def gen_qr(data):
   img = qr.make_image(fill='red', back_color='white')
   buffered = BytesIO()
   img.save(buffered, format="PNG")
+  log(f'QR code generated for {data}')
   return base64.b64encode(buffered.getvalue()).decode()
 
 # def fetch_data():
@@ -138,14 +142,8 @@ def get_qrdata(img):
     img_array = np.array(pil_image)
     img_array = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
     data, _, _ = decoder.detectAndDecode(img_array)
+    log(f'QR code decoded: {data}')
     return data
   except Exception as e:
+    log(f'Error: {str(e)}')
     raise e
-
-
-if __name__ == '__main__':
-  data = db_handler()
-  data.set_username('admin')
-  data.username()
-  log(f"[green]User logged in: [bold italic]{
-      data.username()}[/][/]")
