@@ -47,6 +47,7 @@ def forgot_pass():
 
 def scan_page():
   if 'scan_id' not in st.session_state:
+    log('[blue]Scan is not found in session[/]')
     st.header('Scan QR Code', divider='rainbow')
     img = st.camera_input(
         "Take a picture of the QR code to add to cart", key="qr_code")
@@ -54,6 +55,7 @@ def scan_page():
       try:
         dt = get_qrdata(img)
         if data.find('items', _id=dt):
+          log(f"[blue]{data.username}: QR code scanned successfully[/]")
           st.success('QR code scanned successfully')
           st.session_state.scan_id = dt
           st.rerun()
@@ -62,6 +64,7 @@ def scan_page():
       except ValueError as e:
         st.error(str(e))
   else:
+    log('[blue]Scan is found in session[/]')
     st.header('Add to Cart', divider='rainbow')
     dt = data.find('items', _id=st.session_state.scan_id)
     with st.form(key="scan_add_to_cart"):
@@ -205,11 +208,11 @@ def main():
   authenticator.login()
   if st.session_state.authentication_status is True:
     data.set_username(st.session_state.username)
-    llp = data.username
-    log(f"[green]User logged in: [bold italic]{llp}[/][/]")
+    log(f"[green]User logged in: [bold italic]{data.username}[/][/]")
     st.sidebar.subheader(f"Logged in as: {data.username}")
     authenticator.logout(location='sidebar')
     if data.get_status() is False:
+      log(f"[blue]{data.username}: User is in shopping mode[/]")
       pg = st.navigation({'Easy Mart': [
           st.Page(scan_page, title="Scan QR Code",
                   icon=":material/qr_code_scanner:"),
@@ -221,6 +224,7 @@ def main():
       ]})
       pg.run()
     else:
+      log(f"[blue]{data.username}: User is in checkout mode[/]")
       st.header('Checkout')
       bill = data.get_cart()
       bill_df = pd.DataFrame(columns=["Name", "Price", "Quantity", "Total"])

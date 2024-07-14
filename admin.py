@@ -7,6 +7,7 @@ data = db_handler()
 def billing_page():
   st.header('Billing', divider='rainbow')
   if 'username' not in st.session_state:
+    log('[blue]Scan is not found in session[/]')
     img = st.camera_input(
         "Take a picture of the QR code to process billing", key="qr_code")
     if img is not None:
@@ -16,10 +17,13 @@ def billing_page():
           raise ValueError("Invalid QR code")
         st.success('QR code scanned successfully')
         st.session_state.username = dt
+        log('[blue]QR code scanned successfully[/]')
         st.rerun()
       except ValueError as e:
+        log(f'[red]Error: {str(e)}[/]')
         st.error(str(e))
   else:
+    log('[blue]Scan is found in session[/]')
     data.fetch()
     with st.container(border=True):
       st.header(f'Name: {st.session_state.username}', divider='rainbow')
@@ -45,6 +49,7 @@ def billing_page():
         data.user_info['usernames'][st.session_state.username]['cart'] = {}
         data.user_info['usernames'][st.session_state.username]['status'] = False
         data.sync()
+        log(f"[green]Checkout successful for {st.session_state.username}[/]")
         st.session_state.clear()
         st.rerun()
 
@@ -91,9 +96,13 @@ def stock_page():
         if st.button('Update', key='supdate' + item['_id']):
           data.items.update_one({"_id": item['_id']}, {
               "$set": {"name": up_name, "price": up_price, "category": up_cat, "stock": up_stock}})
+          log(f"[green]Item {item['name']} updated successfully[/]")
+          st.toast(f":green[Item {item['name']} updated successfully]")
           st.rerun()
       if rb.button('Delete', key='sdelete' + item['_id'], type='primary', use_container_width=True):
         data.items.delete_one({"_id": item['_id']})
+        log(f"[red]Item {item['name']} deleted successfully[/]")
+        st.toast(f":red[Item {item['name']} deleted successfully]")
         st.rerun()
   with st.popover('Add Item', use_container_width=True):
     st.markdown("#### *Add Item*")
@@ -104,6 +113,8 @@ def stock_page():
     if st.button('Add', key='sadd'):
       data.insert('items', {"_id": str(uuid.uuid4()), "name": name, "price": int(
           price), "category": cat, "stock": int(stock)})
+      log(f"[green]Item {name} added successfully[/]")
+      st.toast(f":green[Item {name} added successfully]")
       st.rerun()
 
 
@@ -116,7 +127,6 @@ def carts_page():
     if ('cart' in user_dt and user_dt['cart'] != {}) and ((ser != '' and ser in username) or ser == ''):
       with st.container(border=True):
         st.subheader(f'{username} {'💔'if user_dt['status'] else '❤️'}')
-
         bill_df = pd.DataFrame(columns=["Name", "Price", "Quantity", "Total"])
         for c, q in user_dt['cart'].items():
           item_dt = data.find('items', _id=c)
@@ -136,8 +146,57 @@ def carts_page():
           st.dataframe(bill_df)
         if st.button('Delete', key='delete' + username, type='primary', use_container_width=True):
           data.set_cart(username, False)
+          log(f"[red]Cart deleted for {username}[/]")
+          st.toast(f":red[Cart deleted for {username}]")
           st.rerun()
 
+def users():
+  st.header('Users', divider='rainbow')
+  sec = st.text_input('User Names')
+  for ind, (username, udt) in enumerate(data.user_info['usernames'].items()):
+    if sec == '' or sec in username:
+      with st.expander(username):
+        ll, rr = st.columns(2)
+        ll.markdown(f'''### Username:
+### Name:
+### Email:
+### Logged In:
+### Cart Status:
+''')
+        if 'failed_login_attempts' in udt:
+          ll.markdown(f"### Fail Logged In:")
+        rr.markdown(f'''### ***{username}***
+### ***{udt['name']}***
+### ***{udt['email']}***
+### ***{udt['logged_in']}***
+### ***{udt['status']}***
+''' )
+        if 'failed_login_attempts' in udt:
+          rr.markdown(f"### ***{udt['failed_login_attempts']}***")
+        ll.subheader("Cart")
+        rr.json(udt['cart'])
+
+
+@st.experimental_dialog("Your Password")
+def show_pass(user, passs):
+  st.subheader(f'Username: {user}')
+  st.subheader(f"Password: {passs}")
+  log(f"[green]Password shown for {passs['_id']}[/]")
+  if st.button('Close', key='close', type='primary', use_container_width=True):
+    st.rerun()
+
+
+def forget_pass():
+  st.header('Forget Passwords', divider='rainbow')
+  sec = st.text_input('User Names')
+  for passs in data.forget.find():
+    if sec == '' or sec in passs['_id']:
+      with st.expander(passs['_id']):
+        st.subheader(f'Username: {passs["_id"]}')
+        if st.button('Show Password', type='primary', use_container_width=True):
+          data.forget.delete_one({'_id': passs['_id']})
+          log(f"[red]Password deleted for {passs['_id']}[/]")
+          show_pass(passs['_id'], passs['password'])
 
 def main():
   st.title('Easy Mart Admin Panel')
@@ -145,6 +204,8 @@ def main():
       st.Page(billing_page, title="Billing", icon=":material/receipt_long:"),
       st.Page(stock_page, title="Inventory", icon=":material/inventory_2:"),
       st.Page(carts_page, title="Carts", icon=":material/shopping_cart:"),
+      st.Page(users, title="Users", icon=":material/shopping_cart:"),
+      st.Page(forget_pass, title="Forget Passwords", icon=":material/shopping_cart:"),
   ]})
   pg.run()
 
