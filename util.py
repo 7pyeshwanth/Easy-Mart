@@ -32,7 +32,7 @@ class db_handler:
     self.fetch()
 
   def fetch(self):
-    print('fetching data')
+    log('Fetching data')
     self.user_info = {'usernames': {
         user["_id"]: user for user in list(self.users.find({}))}}
 
@@ -54,7 +54,6 @@ class db_handler:
     self.sync()
 
   def find(self, collection, **query):
-    print('query', query)
     return self.db[collection].find_one(query)
 
   def find_all(self, collection, **query):
@@ -62,7 +61,6 @@ class db_handler:
 
   def set_username(self, username):
     self.username = username
-    print('set_username', self.username)
 
   @dispatch(bool)
   def set_status(self, status):
@@ -116,24 +114,6 @@ def gen_qr(data):
   img.save(buffered, format="PNG")
   log(f'QR code generated for {data}')
   return base64.b64encode(buffered.getvalue()).decode()
-
-# def fetch_data():
-#   print(f"[{time.strftime("%Y-%m-%d %H:%M:%S")}] Fetching data ")
-#   return {'usernames': {user["_id"]: user for user in list(users.find({}))}}
-
-# def sync_data(user_info):
-#   print(f"[{time.strftime("%Y-%m-%d %H:%M:%S")}] Syncing data ")
-#   for user_id, details in user_info['usernames'].items():
-#     if dt := users.find_one({'_id': user_id}):
-#       if dt != details:
-#         print('in', {'_id': user_id,}, {'$set': {**details}})
-#         details.pop('_id')
-#         xx = users.update_one({'_id': user_id}, {'$set': details}, upsert=True)
-#         print('xx', xx)
-#         print(f'[{time.strftime("%Y-%m-%d %H:%M:%S")}] Updated user: {user_id}')
-#     else:
-#       users.insert_one({'_id': user_id, **details})
-#       print(f'[{time.strftime("%Y-%m-%d %H:%M:%S")}] New user added: {user_id}')
 
 
 def get_qrdata(img):
